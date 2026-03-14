@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VR and Productivity — Lisa Aufegger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #faf9f7; --ink: #1a1916; --ink-muted: #6b6860; --ink-faint: #b8b5ae;
+      --accent: #c0392b; --accent-soft: #f9ede9; --rule: #e8e5df;
+      --serif: 'DM Serif Display', Georgia, serif; --sans: 'DM Sans', system-ui, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+    .page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; max-width: 1100px; margin: 0 auto; }
+    .sidebar { position: sticky; top: 0; height: 100vh; padding: 48px 28px 48px 48px; display: flex; flex-direction: column; border-right: 1px solid var(--rule); background: var(--bg); overflow-y: auto; }
+    .sidebar-name { font-family: var(--serif); font-size: 1.05rem; color: var(--ink); text-decoration: none; display: block; margin-bottom: 4px; }
+    .sidebar-role { font-size: 0.75rem; color: var(--ink-faint); margin-bottom: 40px; }
+    .sidebar-nav { display: flex; flex-direction: column; }
+    .sidebar-nav-group { margin-bottom: 24px; }
+    .sidebar-nav-label { font-size: 0.63rem; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+    .sidebar-nav a { display: block; font-size: 0.86rem; color: var(--ink-muted); text-decoration: none; padding: 3px 0; transition: color 0.15s; line-height: 1.5; }
+    .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--accent); }
+    .sidebar-email { margin-top: auto; font-size: 0.76rem; color: var(--ink-faint); text-decoration: none; word-break: break-all; }
+    .sidebar-email:hover { color: var(--accent); }
+    .main { padding: 72px 0 80px; overflow-y: auto; height: 100vh; }
+    .container { max-width: 680px; padding: 0 clamp(24px,5vw,64px); }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 500; color: var(--ink-muted); text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
+    .back-link:hover { color: var(--accent); }
+    .cs-context { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    .cs-title { font-family: var(--serif); font-size: clamp(1.9rem,4vw,2.8rem); line-height: 1.08; color: var(--ink); margin-bottom: 16px; }
+    .cs-subtitle { font-size: 1rem; color: var(--ink-muted); line-height: 1.72; max-width: 520px; margin-bottom: 22px; }
+    .cs-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cs-tag { font-size: 0.72rem; font-weight: 500; padding: 4px 12px; border-radius: 100px; background: var(--rule); color: var(--ink-muted); }
+    .cs-tag.accent { background: var(--accent-soft); color: var(--accent); }
+    .divider { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+    .stat-row { display: flex; gap: 0; padding-bottom: 36px; border-bottom: 1px solid var(--rule); }
+    .stat-cell { flex: 1; }
+    .stat-cell + .stat-cell { border-left: 1px solid var(--rule); padding-left: 28px; }
+    .stat-value { font-family: var(--serif); font-size: 2rem; color: var(--ink); margin-bottom: 4px; line-height: 1; }
+    .stat-label { font-size: 0.73rem; color: var(--ink-faint); line-height: 1.4; }
+    .cs-section { padding: 32px 0; border-bottom: 1px solid var(--rule); }
+    .cs-section:last-of-type { border-bottom: none; }
+    .section-eyebrow { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+    .cs-section h2 { font-family: var(--serif); font-size: 1.35rem; color: var(--ink); margin-bottom: 12px; }
+    .cs-section p { font-size: 0.93rem; color: var(--ink-muted); line-height: 1.75; margin-bottom: 10px; }
+    .cs-section p:last-child { margin-bottom: 0; }
+    .pull-quote { font-family: var(--serif); font-size: 1.05rem; font-style: italic; color: var(--ink); border-left: 3px solid var(--accent); padding-left: 18px; margin: 16px 0 0; line-height: 1.5; }
+    .goals-list { list-style: none; padding: 0; margin: 0; }
+    .goals-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 0.91rem; color: var(--ink-muted); line-height: 1.55; }
+    .goals-list li:last-child { border-bottom: none; }
+    .phases { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+    @media (max-width: 520px) { .phases { grid-template-columns: 1fr; } }
+    .phase-card { border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+    .phase-label { font-size: 0.67rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+    .phase-title { font-size: 0.93rem; font-weight: 500; color: var(--ink); margin-bottom: 5px; }
+    .phase-desc { font-size: 0.82rem; color: var(--ink-muted); line-height: 1.6; }
+    details { border: 1px solid var(--rule); border-radius: 8px; margin: 12px 0; overflow: hidden; }
+    summary { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; cursor: pointer; list-style: none; font-size: 0.84rem; font-weight: 500; color: var(--ink); background: var(--bg); user-select: none; transition: background 0.15s; }
+    summary::-webkit-details-marker { display: none; }
+    summary:hover { background: var(--accent-soft); }
+    .summary-label { line-height: 1.4; }
+    .summary-sub { font-size: 0.74rem; font-weight: 400; color: var(--ink-faint); margin-top: 2px; }
+    .chevron { font-size: 0.7rem; color: var(--ink-faint); transition: transform 0.22s; flex-shrink: 0; }
+    details[open] .chevron { transform: rotate(180deg); }
+    .details-body { padding: 16px 16px 18px; border-top: 1px solid var(--rule); }
+    .details-body p { font-size: 0.86rem; color: var(--ink-muted); line-height: 1.75; margin-bottom: 10px; }
+    .details-body p:last-child { margin-bottom: 0; }
+    .details-body strong { color: var(--ink); font-weight: 500; }
+    .findings-list { list-style: none; padding: 0; margin: 4px 0; }
+    .findings-list li { display: flex; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--rule); font-size: 0.91rem; color: var(--ink-muted); line-height: 1.6; }
+    .findings-list li:last-child { border-bottom: none; }
+    .findings-list li strong { color: var(--ink); font-weight: 500; }
+    /* Framework grid */
+    .framework-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    @media (max-width: 480px) { .framework-grid { grid-template-columns: 1fr; } }
+    .framework-card { border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+    .framework-icon { font-size: 1.3rem; margin-bottom: 8px; }
+    .framework-title { font-size: 0.93rem; font-weight: 500; color: var(--ink); margin-bottom: 5px; }
+    .framework-desc { font-size: 0.82rem; color: var(--ink-muted); line-height: 1.6; }
+    /* Figure wrap */
+    .figure-wrap { margin: 18px 0 6px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; overflow: hidden; }
+    .figure-header { padding: 16px 20px 0; }
+    .figure-eyebrow { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
+    .figure-title-text { font-size: 0.91rem; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+    .figure-sub { font-size: 0.76rem; color: var(--ink-faint); }
+    .figure-body { padding: 12px 20px 8px; }
+    .figure-caption { font-size: 0.76rem; color: var(--ink-muted); line-height: 1.6; border-top: 1px solid var(--rule); padding: 11px 20px 14px; background: var(--bg); }
+    .impact-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+    @media (max-width: 480px) { .impact-stats { grid-template-columns: 1fr; } }
+    .impact-card { border-left: 3px solid var(--accent); padding: 13px 15px; background: var(--accent-soft); border-radius: 0 8px 8px 0; }
+    .impact-value { font-family: var(--serif); font-size: 1.35rem; color: var(--ink); margin-bottom: 3px; line-height: 1.2; }
+    .impact-desc { font-size: 0.8rem; color: var(--ink-muted); line-height: 1.5; }
+    .outcome-blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+    @media (max-width: 480px) { .outcome-blocks { grid-template-columns: 1fr; } }
+    .outcome-block { border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+    .outcome-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .outcome-label.shipped { color: #2e7d32; }
+    .outcome-label.future { color: var(--ink-faint); }
+    .outcome-block ul { list-style: none; padding: 0; }
+    .outcome-block ul li { font-size: 0.83rem; color: var(--ink-muted); padding: 6px 0 6px 16px; border-bottom: 1px solid var(--rule); line-height: 1.5; position: relative; }
+    .outcome-block ul li:last-child { border-bottom: none; }
+    .outcome-block ul li::before { content: '✓'; position: absolute; left: 0; color: #2e7d32; font-size: 0.73rem; top: 7px; }
+    .outcome-block.future ul li::before { content: '→'; color: var(--ink-faint); }
+    .role-list { list-style: none; padding: 0; }
+    .role-list li { font-size: 0.91rem; color: var(--ink-muted); padding: 9px 0 9px 18px; border-bottom: 1px solid var(--rule); line-height: 1.6; position: relative; }
+    .role-list li:last-child { border-bottom: none; }
+    .role-list li::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
+    .cs-bottom-nav { padding: 36px 0 0; display: flex; justify-content: space-between; }
+    .bottom-nav-link { font-size: 0.83rem; font-weight: 500; color: var(--ink-muted); text-decoration: none; transition: color 0.2s; }
+    .bottom-nav-link:hover { color: var(--accent); }
+    @media (max-width: 768px) {
+      .page { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; padding: 20px 24px; border-right: none; border-bottom: 1px solid var(--rule); flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; }
+      .sidebar-name { margin-bottom: 0; }
+      .sidebar-role { display: none; }
+      .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+      .sidebar-nav-group { display: flex; gap: 14px; margin-bottom: 0; align-items: center; }
+      .sidebar-nav-label { display: none; }
+      .sidebar-nav a { padding: 6px 0; font-size: 0.8rem; }
+      .sidebar-email { margin-top: 0; }
+      .main { padding: 32px 0; height: auto; overflow-y: visible; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <aside class="sidebar">
+    <a class="sidebar-name" href="index.html">Lisa Aufegger</a>
+    <p class="sidebar-role">User Research &amp; Insights</p>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav-group">
+        <p class="sidebar-nav-label">Work</p>
+        <a href="case-study-1.html">Converting Awareness into Adoption</a>
+        <a href="case-study-4.html" class="active">VR &amp; Productivity</a>
+      </div>
+      <div class="sidebar-nav-group">
+        <p class="sidebar-nav-label">About</p>
+        <a href="index.html#about">About me</a>
+        <a href="index.html#resume">Résumé</a>
+        <a href="index.html#writings">Writings</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+    </nav>
+    <a class="sidebar-email" href="mailto:lisa.aufegger@gmail.com">lisa.aufegger@gmail.com</a>
+  </aside>
+
+  <div class="main"><div class="container">
+
+    <a class="back-link" href="index.html">← Back to work</a>
+
+    <p class="cs-context">Meta · Reality Labs · 2022</p>
+    <h1 class="cs-title">VR and Productivity in<br>Knowledge Workers</h1>
+    <p class="cs-subtitle">A two-study qualitative programme exploring whether VR can genuinely support distributed work — and what design principles must hold for it to replace a desk.</p>
+    <div class="cs-tags">
+      <span class="cs-tag accent">Contextual Interviews</span>
+      <span class="cs-tag accent">Framework Analysis</span>
+      <span class="cs-tag accent">Journey Mapping</span>
+      <span class="cs-tag">Qualitative</span>
+      <span class="cs-tag">VR</span>
+      <span class="cs-tag">4 Countries</span>
+    </div>
+
+    <hr class="divider">
+
+    <div class="stat-row">
+      <div class="stat-cell">
+        <div class="stat-value">~70</div>
+        <div class="stat-label">Participants across<br>both studies</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value">16+hrs</div>
+        <div class="stat-label">VR collaboration<br>sessions recorded</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Framework dimensions<br>for productive VR design</div>
+      </div>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Context</p>
+      <h2>The Problem</h2>
+      <p>VR platforms were being positioned as the future of distributed work — but almost no evidence existed on whether they could support real knowledge work tasks, not just social presence.</p>
+      <p class="pull-quote">"Most VR platforms were designed for social experiences. The question was whether they could support actual work."</p>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Research Goals</p>
+      <h2>What I Set Out to Learn</h2>
+      <ul class="goals-list">
+        <li><span>🧠</span> Understand how knowledge workers protect productivity and focus in distributed environments</li>
+        <li><span>🥽</span> Evaluate whether VR supports deep-focus individual work</li>
+        <li><span>🤝</span> Examine how VR changes collaboration dynamics vs. video meetings</li>
+        <li><span>📐</span> Define the design requirements for VR workspaces that support real work</li>
+      </ul>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Approach</p>
+      <h2>Two Studies in Sequence</h2>
+      <p>First establishing a baseline understanding of productivity outside VR, then evaluating VR's effect on those same behaviours.</p>
+      <div class="phases">
+        <div class="phase-card">
+          <p class="phase-label">Study 1 — Baseline</p>
+          <p class="phase-title">Remote Work Productivity</p>
+          <p class="phase-desc">~50 knowledge workers across 4 countries. 90-min contextual interviews, work observations, and collaboration workflow journey mapping.</p>
+        </div>
+        <div class="phase-card">
+          <p class="phase-label">Study 2 — VR Evaluation</p>
+          <p class="phase-title">Productivity in VR</p>
+          <p class="phase-desc">~25 VR users + observed live sessions. 16+ hours of recorded collaboration, semi-structured interviews, and framework analysis.</p>
+        </div>
+      </div>
+      <details>
+        <summary>
+          <div><div class="summary-label">Analysis methodology</div><div class="summary-sub">Framework analysis and journey mapping</div></div>
+          <span class="chevron">▼</span>
+        </summary>
+        <div class="details-body">
+          <p>A framework analysis was combined with journey mapping across both studies. Framework analysis was chosen for its ability to systematically compare thematic material across a large multi-source dataset — interview transcripts, observational notes, and session recordings.</p>
+          <p>Journey mapping modelled moment-to-moment transitions between individual deep work and collaborative activities, capturing where remote tools introduced friction and where VR offered something different.</p>
+          <p><strong>Analysis process:</strong> Inductively coded from the data, not a predefined framework. A second researcher independently coded a subset for reliability. Findings triangulated against existing workplace design and organisational psychology research.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Findings</p>
+      <h2>Four Key Insights</h2>
+      <ul class="findings-list">
+        <li><span>🧘</span><div><strong>VR creates a psychological boundary that supports focus.</strong> The headset's physical barrier was the most consistently cited benefit — participants entered focused states more easily in VR than any 2D remote setup.</div></li>
+        <li><span>🤝</span><div><strong>VR meetings work — but only when content interaction is possible.</strong> Participants felt "in the same room" and reported more equal participation, but only when they could annotate and interact with shared content. Passive VR meetings rated no better than video calls.</div></li>
+        <li><span>🔔</span><div><strong>Notification overload is the primary productivity barrier — in VR and outside it.</strong> Most participants had built manual workarounds (muting apps, scheduling focus blocks) — the tools weren't solving the problem.</div></li>
+        <li><span>🔋</span><div><strong>Hardware is the ceiling on adoption.</strong> Despite strong intent, headset discomfort and interaction limitations — note-taking, task-switching — were universally cited as barriers to sustained daily use.</div></li>
+      </ul>
+
+      <!-- Figure 1: VR Framework -->
+      <div class="figure-wrap" style="margin-top:20px;">
+        <div class="figure-header">
+          <p class="figure-eyebrow">Figure 1 · Results</p>
+          <p class="figure-title-text">VR Productivity Framework</p>
+          <p class="figure-sub">How VR mediates individual and team work across three design dimensions</p>
+        </div>
+        <div class="figure-body">
+          <svg viewBox="0 0 580 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:'DM Sans',sans-serif;">
+            <rect width="580" height="320" fill="#fff"/>
+            <!-- Async/Sync arrow -->
+            <defs>
+              <marker id="al" markerWidth="7" markerHeight="7" refX="0" refY="3.5" orient="auto"><path d="M7,0 L0,3.5 L7,7" fill="none" stroke="#b8b5ae" stroke-width="1.2"/></marker>
+              <marker id="ar" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="none" stroke="#b8b5ae" stroke-width="1.2"/></marker>
+            </defs>
+            <line x1="50" y1="22" x2="530" y2="22" stroke="#b8b5ae" stroke-width="1.2" marker-start="url(#al)" marker-end="url(#ar)"/>
+            <text x="150" y="17" font-size="9.5" fill="#6b6860" font-style="italic" text-anchor="middle">Asynchronous</text>
+            <text x="430" y="17" font-size="9.5" fill="#6b6860" font-style="italic" text-anchor="middle">Synchronous</text>
+            <!-- Left box -->
+            <rect x="14" y="34" width="168" height="140" fill="#fff" stroke="#e8e5df" stroke-width="1.2" rx="5"/>
+            <text x="24" y="52" font-size="9.5" font-weight="600" fill="#1a1916">Individual working</text>
+            <text x="24" y="70" font-size="8.5" font-weight="600" fill="#1a1916">Needs:</text>
+            <text x="24" y="82" font-size="8" fill="#6b6860" font-style="italic">focused, distraction-free</text>
+            <text x="24" y="98" font-size="8.5" font-weight="600" fill="#1a1916">Tasks:</text>
+            <text x="24" y="110" font-size="8" fill="#6b6860">single, well-defined</text>
+            <text x="24" y="126" font-size="8.5" font-weight="600" fill="#1a1916">Goal setting:</text>
+            <text x="24" y="138" font-size="8" fill="#6b6860" font-style="italic">mainly internal</text>
+            <text x="24" y="154" font-size="8.5" font-weight="600" fill="#1a1916">Productivity:</text>
+            <text x="24" y="166" font-size="8" fill="#6b6860">mental state; self-regulation</text>
+            <!-- Right box -->
+            <rect x="398" y="34" width="168" height="140" fill="#fff" stroke="#e8e5df" stroke-width="1.2" rx="5"/>
+            <text x="408" y="52" font-size="9.5" font-weight="600" fill="#1a1916">Team working</text>
+            <text x="408" y="70" font-size="8.5" font-weight="600" fill="#1a1916">Needs:</text>
+            <text x="408" y="82" font-size="8" fill="#6b6860" font-style="italic">transparency; responsiveness</text>
+            <text x="408" y="98" font-size="8.5" font-weight="600" fill="#1a1916">Tasks:</text>
+            <text x="408" y="110" font-size="8" fill="#6b6860">multi-expertise; cloud-based</text>
+            <text x="408" y="126" font-size="8.5" font-weight="600" fill="#1a1916">Goal setting:</text>
+            <text x="408" y="138" font-size="8" fill="#6b6860" font-style="italic">mainly external</text>
+            <text x="408" y="154" font-size="8.5" font-weight="600" fill="#1a1916">Productivity:</text>
+            <text x="408" y="166" font-size="8" fill="#6b6860">external monitoring</text>
+            <!-- Centre VR pill -->
+            <rect x="220" y="46" width="140" height="80" fill="#1a1916" rx="14"/>
+            <text x="290" y="78" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">Virtual Reality</text>
+            <text x="290" y="94" font-size="8.5" fill="#b8b5ae" text-anchor="middle">• Environment</text>
+            <text x="290" y="107" font-size="8.5" fill="#b8b5ae" text-anchor="middle">• Physical Setup</text>
+            <text x="290" y="120" font-size="8.5" fill="#b8b5ae" text-anchor="middle">• Cognition &amp; Behaviour</text>
+            <!-- Arrows -->
+            <line x1="183" y1="104" x2="218" y2="92" stroke="#6b6860" stroke-width="1" marker-end="url(#ar)"/>
+            <line x1="397" y1="104" x2="362" y2="92" stroke="#6b6860" stroke-width="1" marker-end="url(#al)"/>
+            <line x1="290" y1="127" x2="290" y2="175" stroke="#6b6860" stroke-width="1" marker-end="url(#ar)"/>
+            <!-- Bottom panels -->
+            <rect x="14"  y="180" width="164" height="126" fill="#eceae5" rx="5"/>
+            <rect x="14"  y="180" width="164" height="20"  fill="#9e9e9e" rx="5"/>
+            <rect x="14"  y="192" width="164" height="8"   fill="#9e9e9e"/>
+            <text x="96" y="194" font-size="9" font-weight="600" fill="#fff" text-anchor="middle">Environment</text>
+            <text x="24" y="214" font-size="8" fill="#1a1916">• Individual vs. shared spaces</text>
+            <text x="24" y="228" font-size="8" fill="#1a1916">• Fluid switching between zones</text>
+            <text x="24" y="242" font-size="8" fill="#1a1916">• Customisable interior &amp; lighting</text>
+            <text x="24" y="256" font-size="8" fill="#1a1916">• Scenery options (beach, café)</text>
+            <rect x="190" y="180" width="116" height="126" fill="#f0ede8" rx="5"/>
+            <rect x="190" y="180" width="116" height="20"  fill="#c8c4bc" rx="5"/>
+            <rect x="190" y="192" width="116" height="8"   fill="#c8c4bc"/>
+            <text x="248" y="194" font-size="9" font-weight="600" fill="#fff" text-anchor="middle">Physical Setup</text>
+            <text x="200" y="214" font-size="8" fill="#1a1916">• Visible VR boundary</text>
+            <text x="200" y="228" font-size="8" fill="#1a1916">• Lighter hardware</text>
+            <text x="200" y="242" font-size="8" fill="#1a1916">• Longer battery life</text>
+            <rect x="318" y="180" width="248" height="126" fill="#eceae5" rx="5"/>
+            <rect x="318" y="180" width="248" height="20"  fill="#9e9e9e" rx="5"/>
+            <rect x="318" y="192" width="248" height="8"   fill="#9e9e9e"/>
+            <text x="442" y="194" font-size="9" font-weight="600" fill="#fff" text-anchor="middle">Cognition &amp; Behaviour</text>
+            <text x="328" y="214" font-size="8" fill="#1a1916">• Enhanced focus &amp; flow state</text>
+            <text x="328" y="228" font-size="8" fill="#1a1916">• Notification management</text>
+            <text x="328" y="242" font-size="8" fill="#1a1916">• Break reminders &amp; wellbeing</text>
+            <text x="328" y="256" font-size="8" fill="#1a1916">• Document creation &amp; review</text>
+            <line x1="442" y1="200" x2="442" y2="306" stroke="#c8c4bc" stroke-width="1" stroke-dasharray="3,2"/>
+            <text x="453" y="214" font-size="8" fill="#1a1916">• Productivity tracking</text>
+            <text x="453" y="228" font-size="8" fill="#1a1916">• Task prioritisation</text>
+            <text x="453" y="242" font-size="8" fill="#1a1916">• Collaboration tools</text>
+          </svg>
+        </div>
+        <p class="figure-caption"><strong>Figure 1.</strong> VR Productivity Framework: how Virtual Reality mediates the tension between individual asynchronous work and distributed team collaboration, across three design dimensions. Based on findings from Study 1 (N≈50) and Study 2 (N≈25).</p>
+      </div>
+
+      <!-- Figure 2: Journey map -->
+      <div class="figure-wrap" style="margin-top:16px;">
+        <div class="figure-header">
+          <p class="figure-eyebrow">Figure 2 · Process</p>
+          <p class="figure-title-text">Collaboration Journey Map</p>
+          <p class="figure-sub">Sync/async switching and content creation across a distributed team task</p>
+        </div>
+        <div class="figure-body">
+          <svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:'DM Sans',sans-serif;">
+            <rect width="560" height="200" fill="#f5f4f0" rx="0"/>
+            <text x="14" y="14" font-size="8" fill="#6b6860" font-style="italic">Task: Creating a scope for blog posts — distributed team</text>
+            <!-- Step bubbles -->
+            <circle cx="56"  cy="60" r="42" fill="#3a8fd4"/>
+            <circle cx="168" cy="60" r="42" fill="#3a8fd4"/>
+            <circle cx="280" cy="60" r="42" fill="#3a8fd4"/>
+            <circle cx="392" cy="60" r="42" fill="#3a8fd4"/>
+            <circle cx="504" cy="60" r="42" fill="#3a8fd4"/>
+            <!-- Step labels -->
+            <text x="56"  y="42" font-size="7" font-style="italic" fill="#cce4f7" text-anchor="middle">Step 2</text>
+            <text x="56"  y="55" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">Met team,</text>
+            <text x="56"  y="66" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">delegated</text>
+            <text x="56"  y="77" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">tasks</text>
+            <text x="168" y="42" font-size="7" font-style="italic" fill="#cce4f7" text-anchor="middle">Step 3</text>
+            <text x="168" y="55" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">PO created</text>
+            <text x="168" y="66" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">Google Doc</text>
+            <text x="168" y="77" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">with brief</text>
+            <text x="280" y="42" font-size="7" font-style="italic" fill="#cce4f7" text-anchor="middle">Step 4</text>
+            <text x="280" y="55" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">Team wrote</text>
+            <text x="280" y="66" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">content in</text>
+            <text x="280" y="77" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">the Doc</text>
+            <text x="392" y="42" font-size="7" font-style="italic" fill="#cce4f7" text-anchor="middle">Step 5</text>
+            <text x="392" y="55" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">PO gave</text>
+            <text x="392" y="66" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">feedback via</text>
+            <text x="392" y="77" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">comments</text>
+            <text x="504" y="42" font-size="7" font-style="italic" fill="#cce4f7" text-anchor="middle">Step 6</text>
+            <text x="504" y="55" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">Team iterated</text>
+            <text x="504" y="66" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">to final</text>
+            <text x="504" y="77" font-size="7.5" font-weight="600" fill="#fff" text-anchor="middle">version</text>
+            <!-- Row 1: Collaboration -->
+            <line x1="14" y1="118" x2="546" y2="118" stroke="#3a8fd4" stroke-width="0.8" opacity="0.3"/>
+            <text x="8" y="122" font-size="7.5" fill="#3a8fd4" font-weight="500" text-anchor="end">Collab.</text>
+            <circle cx="56"  cy="118" r="6" fill="#3a8fd4" opacity="0.9"/>
+            <circle cx="70"  cy="118" r="6" fill="#3a8fd4" opacity="0.6"/>
+            <circle cx="168" cy="118" r="6" fill="#3a8fd4" opacity="0.35"/>
+            <circle cx="280" cy="118" r="6" fill="#3a8fd4" opacity="0.35"/>
+            <circle cx="392" cy="118" r="6" fill="#3a8fd4" opacity="0.9"/>
+            <circle cx="406" cy="118" r="6" fill="#3a8fd4" opacity="0.6"/>
+            <circle cx="504" cy="118" r="6" fill="#3a8fd4" opacity="0.35"/>
+            <!-- Row 2: Sync/Async -->
+            <line x1="14" y1="148" x2="546" y2="148" stroke="#d4820a" stroke-width="0.8" opacity="0.3"/>
+            <text x="8" y="152" font-size="7.5" fill="#d4820a" font-weight="500" text-anchor="end">Sync</text>
+            <rect x="44"  y="140" width="18" height="16" rx="3" fill="none" stroke="#d4820a" stroke-width="1.5"/>
+            <rect x="64"  y="140" width="18" height="16" rx="3" fill="none" stroke="#d4820a" stroke-width="1.5"/>
+            <rect x="156" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <rect x="176" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <rect x="268" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <rect x="288" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <rect x="380" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4820a" stroke-width="1.5"/>
+            <rect x="400" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <line x1="399" y1="138" x2="399" y2="158" stroke="#6b6860" stroke-width="1.2"/>
+            <rect x="492" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <rect x="512" y="140" width="18" height="16" rx="3" fill="none" stroke="#d4a820" stroke-width="1.5"/>
+            <!-- Row 3: Content -->
+            <line x1="14" y1="178" x2="546" y2="178" stroke="#2e7d52" stroke-width="0.8" opacity="0.3"/>
+            <text x="8" y="182" font-size="7.5" fill="#2e7d52" font-weight="500" text-anchor="end">Content</text>
+            <circle cx="56"  cy="178" r="7" fill="#2e7d52" opacity="0.8"/>
+            <rect x="160" y="171" width="16" height="14" rx="2" fill="#2e7d52" opacity="0.7"/>
+            <rect x="272" y="171" width="16" height="14" rx="2" fill="#2e7d52" opacity="0.7"/>
+            <circle cx="392" cy="178" r="7" fill="#2e7d52" opacity="0.8"/>
+            <rect x="496" y="171" width="16" height="14" rx="2" fill="#2e7d52" opacity="0.7"/>
+            <!-- Legend -->
+            <circle cx="70"  cy="193" r="5" fill="#3a8fd4" opacity="0.9"/>
+            <text x="79"  cy="193" y="197" font-size="8" fill="#6b6860">Collaborative</text>
+            <circle cx="155" cy="193" r="5" fill="#3a8fd4" opacity="0.35"/>
+            <text x="164" cy="193" y="197" font-size="8" fill="#6b6860">Non-collab.</text>
+            <rect x="236" y="188" width="10" height="10" rx="1.5" fill="none" stroke="#d4820a" stroke-width="1.2"/>
+            <text x="250" y="197" font-size="8" fill="#6b6860">Synchronous</text>
+            <rect x="322" y="188" width="10" height="10" rx="1.5" fill="none" stroke="#d4a820" stroke-width="1.2"/>
+            <text x="336" y="197" font-size="8" fill="#6b6860">Asynchronous</text>
+            <rect x="412" y="188" width="10" height="10" rx="1.5" fill="#2e7d52" opacity="0.7"/>
+            <text x="426" y="197" font-size="8" fill="#6b6860">Content creation</text>
+          </svg>
+        </div>
+        <p class="figure-caption"><strong>Figure 2.</strong> Collaboration journey map showing how a distributed team switches between synchronous and asynchronous modes across a single task. Three swimlanes reveal where transitions occur and where tools must support mode-switching. Based on observational data, Study 1.</p>
+      </div>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Output</p>
+      <h2>VR Productivity Framework</h2>
+      <p>Four dimensions required for VR environments to genuinely support productive work.</p>
+      <div class="framework-grid">
+        <div class="framework-card">
+          <div class="framework-icon">🏗️</div>
+          <div class="framework-title">Environmental Design</div>
+          <div class="framework-desc">Dedicated focus and collaboration spaces with fluid switching between them. Customisable environments that reflect personal and team identity.</div>
+        </div>
+        <div class="framework-card">
+          <div class="framework-icon">💪</div>
+          <div class="framework-title">Physical Comfort</div>
+          <div class="framework-desc">Ergonomics, lighter hardware, and longer battery life as prerequisites for daily adoption — not optional improvements.</div>
+        </div>
+        <div class="framework-card">
+          <div class="framework-icon">🧩</div>
+          <div class="framework-title">Cognitive Support</div>
+          <div class="framework-desc">Context-aware interruption management, availability signalling, and tools that protect focus states rather than adding to notification load.</div>
+        </div>
+        <div class="framework-card">
+          <div class="framework-icon">🔗</div>
+          <div class="framework-title">Behavioural Support</div>
+          <div class="framework-desc">Active content interaction during meetings, task prioritisation tools, and communication that doesn't overwhelm.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">Impact</p>
+      <h2>Decisions &amp; Outcomes</h2>
+      <div class="impact-stats">
+        <div class="impact-card">
+          <div class="impact-value">4 dimensions</div>
+          <div class="impact-desc">VR Productivity Framework adopted as design guidance</div>
+        </div>
+        <div class="impact-card">
+          <div class="impact-value">~175hrs</div>
+          <div class="impact-desc">Workplace observations underpinning the framework</div>
+        </div>
+        <div class="impact-card">
+          <div class="impact-value">5 industries</div>
+          <div class="impact-desc">Findings transferable across knowledge-work contexts</div>
+        </div>
+        <div class="impact-card">
+          <div class="impact-value">Hardware gap</div>
+          <div class="impact-desc">Ergonomics identified as adoption ceiling — shifting investment priority</div>
+        </div>
+      </div>
+      <div class="outcome-blocks">
+        <div class="outcome-block">
+          <p class="outcome-label shipped">Findings Informed</p>
+          <ul>
+            <li>VR workspace design — focus vs. collaboration spaces</li>
+            <li>Meeting features — content interaction as a core requirement</li>
+            <li>Notification management and availability signalling</li>
+            <li>Productivity tool integration roadmap</li>
+          </ul>
+        </div>
+        <div class="outcome-block future">
+          <p class="outcome-label future">Future Work</p>
+          <ul>
+            <li>Longitudinal study on sustained VR adoption</li>
+            <li>Note-taking and multitasking interaction design</li>
+            <li>Avatar expressiveness for high-stakes collaboration</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-section">
+      <p class="section-eyebrow">My Role</p>
+      <h2>Responsibilities</h2>
+      <ul class="role-list">
+        <li>Led end-to-end qualitative research design — protocol development, recruitment, and moderation</li>
+        <li>Conducted 90-min contextual interviews and work observations across 4 countries</li>
+        <li>Designed and facilitated VR observation sessions — 16+ hours of live collaboration recorded</li>
+        <li>Applied framework analysis combined with journey mapping across a large multi-source dataset</li>
+        <li>Synthesised findings into the VR Productivity Framework — three dimensions with concrete design implications</li>
+        <li>Worked with product designers and workplace experts to translate insights into actionable guidelines</li>
+      </ul>
+    </div>
+
+    <div class="cs-bottom-nav">
+      <a class="bottom-nav-link" href="case-study-1.html">← Converting Awareness into Adoption</a>
+      <a class="bottom-nav-link" href="index.html">All work →</a>
+    </div>
+
+  </div></div>
+</div>
+<script>
+  document.querySelectorAll('details').forEach(d => {
+    d.addEventListener('toggle', () => {
+      if (d.open) document.querySelectorAll('details').forEach(o => { if (o !== d) o.removeAttribute('open'); });
+    });
+  });
+</script>
+</body>
+</html>
